@@ -78,6 +78,22 @@ body {
 .step-pill.on { background: #1d1d1f; color: #fff; border-color: #1d1d1f; }
 
 .section-label { font-size: 12px; font-weight: 600; color: var(--meta); letter-spacing: 0.04em; margin: 26px 0 10px; }
+.section-label-row { display: flex; align-items: center; gap: 12px; margin: 26px 0 10px; }
+.section-label-row .section-label { margin: 0; }
+.label-actions { margin-left: auto; display: flex; gap: 8px; }
+.mini-btn {
+  border: 1px solid var(--hairline);
+  background: var(--surface);
+  color: var(--meta);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 5px 14px;
+  cursor: pointer;
+}
+.mini-btn:hover { color: var(--accent-dark); border-color: rgba(0, 113, 227, 0.3); }
+.mini-btn:active { background: rgba(0, 113, 227, 0.08); }
 
 .templates { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
 .template-card {
@@ -138,6 +154,19 @@ body {
   box-shadow: 0 20px 54px rgba(0, 113, 227, 0.24);
 }
 .cta:disabled { opacity: 0.5; cursor: default; }
+.btn-cancel {
+  background: transparent;
+  color: var(--meta);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  padding: 11px 22px;
+  cursor: pointer;
+}
+.btn-cancel:hover { color: #ff3b30; border-color: rgba(255, 59, 48, 0.35); }
+.btn-cancel:disabled { opacity: 0.5; cursor: default; }
 
 .log {
   margin-top: 8px;

@@ -41,6 +41,32 @@ function render() {
   app.innerHTML = "";
   app.append(renderHero(), renderTemplates(), renderRegion(), renderChecklist(), renderFooter(), renderLog(), renderSettings(), renderReport());
   window.scrollTo(0, scrollY);
+  if (state.running) showCancelButton();
+}
+
+function refreshTemplates() {
+  document.querySelectorAll(".template-card").forEach((card) => {
+    card.classList.toggle("on", card.dataset.id === state.activeTemplate);
+  });
+}
+
+function refreshRows() {
+  const selected = new Set(state.selected);
+  document.querySelectorAll(".row").forEach((row) => {
+    row.classList.toggle("on", selected.has(row.dataset.id));
+  });
+}
+
+function refreshCounts() {
+  const selected = new Set(state.selected);
+  document.querySelectorAll(".group").forEach((section) => {
+    const rows = section.querySelectorAll(".row");
+    const checked = [...rows].filter((r) => selected.has(r.dataset.id)).length;
+    const cnt = section.querySelector(".cnt");
+    if (cnt) cnt.textContent = `${t(state.lang, "summary.selected", { count: checked })} / ${rows.length}`;
+  });
+  const summary = document.querySelector(".summary");
+  if (summary) summary.textContent = `${t(state.lang, "summary.selected", { count: state.selected.length })} · ${t(state.lang, "summary.auto.skip")}`;
 }
 
 function renderHero() {
@@ -62,6 +88,7 @@ function renderTemplates() {
   const grid = el("div", "templates");
   for (const tmpl of state.templates) {
     const card = el("div", "template-card" + (state.activeTemplate === tmpl.id ? " on" : ""));
+    card.dataset.id = tmpl.id;
     card.append(
       el("b", "", tmpl[`name_${state.lang}`]),
       el("p", "", tmpl[`desc_${state.lang}`]),
@@ -70,7 +97,9 @@ function renderTemplates() {
     card.addEventListener("click", () => {
       state.activeTemplate = tmpl.id;
       state.selected = applyTemplate(state.selected, tmpl.tool_ids);
-      loadPlanStatus().then(render);
+      refreshTemplates();
+      refreshRows();
+      refreshCounts();
     });
     grid.append(card);
   }
@@ -84,10 +113,13 @@ function renderRegion() {
   const seg = el("div", "seg");
   for (const value of ["auto", "cn", "global"]) {
     const btn = el("button", value === state.region ? "on" : "", t(state.lang, `region.${value}`));
-    btn.addEventListener("click", async () => {
+    btn.dataset.value = value;
+    btn.addEventListener("click", () => {
       state.region = value;
-      await postJSON("/api/settings", { language: state.lang, region: state.region });
-      render();
+      document.querySelectorAll(".seg button").forEach((b) => b.classList.toggle("on", b.dataset.value === value));
+      postJSON("/api/settings", { language: state.lang, region: state.region }).catch((err) => {
+        showError(t(state.lang, "error.network", { message: err.message }));
+      });
     });
     seg.append(btn);
   }
@@ -97,7 +129,24 @@ function renderRegion() {
 
 function renderChecklist() {
   const wrap = el("div");
-  wrap.append(el("div", "section-label", t(state.lang, "checklist.title")));
+  const labelRow = el("div", "section-label-row");
+  labelRow.append(el("div", "section-label", t(state.lang, "checklist.title")));
+  const actions = el("div", "label-actions");
+  const selectAll = el("button", "mini-btn", t(state.lang, "checklist.select_all"));
+  selectAll.addEventListener("click", () => {
+    state.selected = state.tools.map((tool) => tool.id);
+    refreshRows();
+    refreshCounts();
+  });
+  const clear = el("button", "mini-btn", t(state.lang, "checklist.clear"));
+  clear.addEventListener("click", () => {
+    state.selected = [];
+    refreshRows();
+    refreshCounts();
+  });
+  actions.append(selectAll, clear);
+  labelRow.append(actions);
+  wrap.append(labelRow);
   const panel = el("div", "panel");
   for (const group of groupItems()) {
     const section = el("div", "group");
@@ -109,6 +158,7 @@ function renderChecklist() {
     section.append(head);
     for (const item of group.items) {
       const row = el("div", item.checked ? "row on" : "row");
+      row.dataset.id = item.id;
       row.append(el("span", "box", "✓"), el("span", "name", item[`name_${state.lang}`]), el("span", "ver", item.version || ""));
       if (item.status === "installed") {
         row.append(el("span", "badge", t(state.lang, "tool.installed", { version: item.version || "" })));
@@ -116,7 +166,8 @@ function renderChecklist() {
       row.append(el("span", "method", item.method));
       row.addEventListener("click", () => {
         state.selected = toggle(state.selected, item.id);
-        loadPlanStatus().then(render);
+        row.classList.toggle("on", state.selected.includes(item.id));
+        refreshCounts();
       });
       section.append(row);
     }
@@ -205,7 +256,9 @@ function appendLog(line) {
 async function runFlow() {
   const cta = document.querySelector(".cta");
   cta.disabled = true;
+  state.running = true;
   clearError();
+  showCancelButton();
   try {
     const plan = await postJSON("/api/plan", { tool_ids: state.selected });
     const run = await postJSON("/api/run", { tool_ids: plan.items.map((item) => item.tool_id) });
@@ -215,6 +268,8 @@ async function runFlow() {
       if (event.type === "run_done") {
         appendLog(`${mark} ${text} · ${event.status}`);
         unsubscribe();
+        state.running = false;
+        hideCancelButton();
         await loadReport();
         cta.disabled = false;
         return;
@@ -223,8 +278,31 @@ async function runFlow() {
     });
   } catch (err) {
     showError(t(state.lang, "error.network", { message: err.message }));
+    state.running = false;
+    hideCancelButton();
     cta.disabled = false;
   }
+}
+
+function showCancelButton() {
+  const footer = document.querySelector(".footer");
+  if (!footer || footer.querySelector(".btn-cancel")) return;
+  const btn = el("button", "btn-cancel", t(state.lang, "run.cancel"));
+  btn.addEventListener("click", async () => {
+    btn.disabled = true;
+    try {
+      await postJSON("/api/cancel", {});
+    } catch (err) {
+      showError(t(state.lang, "error.network", { message: err.message }));
+      btn.disabled = false;
+    }
+  });
+  footer.insertBefore(btn, footer.querySelector(".cta"));
+}
+
+function hideCancelButton() {
+  const btn = document.querySelector(".btn-cancel");
+  if (btn) btn.remove();
 }
 
 function showError(message) {
