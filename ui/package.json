@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run && node --check src/main.js && node --check src/api.js && node --check src/i18n.js && node --check src/plan.js && node --check src/status.js"
   },
   "devDependencies": {
     "vitest": "^3.0.0"

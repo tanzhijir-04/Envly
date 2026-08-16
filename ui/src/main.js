@@ -191,7 +191,7 @@ async function runFlow() {
   try {
     const plan = await postJSON("/api/plan", { tool_ids: state.selected });
     const run = await postJSON("/api/run", { tool_ids: plan.items.map((item) => item.tool_id) });
-    const unsubscribe = subscribeEvents(run.run_id, (event) => {
+    const unsubscribe = subscribeEvents(run.run_id, async (event) => {
       const text = t(state.lang, event.message_key, event.params || {});
       const mark = event.type === "success" ? "✓" : event.type === "failed" ? "✗" : event.type === "skipped" ? "⏭" : "→";
       if (event.type === "run_done") {
