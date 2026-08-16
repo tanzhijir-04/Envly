@@ -37,7 +37,3 @@ func (i *Installer) Install(ctx context.Context, spec config.InstallSpec) error 
 		return fmt.Errorf("unsupported method %q", spec.Method)
 	}
 }
-
-func (i *Installer) installDownload(_ context.Context, _ config.InstallSpec) error {
-	return fmt.Errorf("download not implemented yet")
-}
