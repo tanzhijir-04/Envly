@@ -27,6 +27,10 @@ const (
 	scClose      = 0xF060
 
 	wsCaption     = 0x00C00000
+	wsThickFrame  = 0x00040000
+	wsSysMenu     = 0x00080000
+	wsMinimizeBox = 0x00020000
+	wsMaximizeBox = 0x00010000
 	swpFramechanged = 0x0020
 	swpNoMove     = 0x0002
 	swpNoSize     = 0x0001
@@ -93,7 +97,9 @@ func stripCaption(hwnd uintptr) error {
 	if style == 0 {
 		return fmt.Errorf("failed to read window style")
 	}
-	newStyle := style &^ uintptr(wsCaption)
+	// 清除所有非客户区样式位：标题栏、边框、系统菜单、最小化/最大化按钮
+	nonClient := uintptr(wsCaption | wsThickFrame | wsSysMenu | wsMinimizeBox | wsMaximizeBox)
+	newStyle := style &^ nonClient
 	if newStyle == style {
 		return nil // 已经是无边框
 	}
