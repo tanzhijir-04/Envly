@@ -71,11 +71,10 @@ func (Controller) Action(action string) error {
 		procPostMessageW.Call(hwnd, wmSysCommand, scMinimize, 0)
 	case "maximize":
 		zoomed, _, _ := procIsZoomed.Call(hwnd)
-		cmd := uintptr(scMaximize)
 		if zoomed != 0 {
-			cmd = scRestore
+			procPostMessageW.Call(hwnd, wmSysCommand, scRestore, 0)
 		}
-		procPostMessageW.Call(hwnd, wmSysCommand, cmd, 0)
+		// 窗口最大化时 WebView 不重新铺满（pake 缺陷），因此普通状态下不再放大
 	case "close":
 		procPostMessageW.Call(hwnd, wmSysCommand, scClose, 0)
 	default:
@@ -90,7 +89,17 @@ func EnsureFrameless() error {
 	if err != nil {
 		return err
 	}
+	restoreIfMaximized(hwnd)
 	return ensureChrome(hwnd)
+}
+
+// restoreIfMaximized 若窗口处于最大化（如被 Win+Up / 贴靠触发），立即还原，
+// 避免 WebView 未铺满导致的深色边带。
+func restoreIfMaximized(hwnd uintptr) {
+	zoomed, _, _ := procIsZoomed.Call(hwnd)
+	if zoomed != 0 {
+		procPostMessageW.Call(hwnd, wmSysCommand, scRestore, 0)
+	}
 }
 
 func ensureChrome(hwnd uintptr) error {
