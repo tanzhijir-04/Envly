@@ -21,6 +21,7 @@ import (
 	"github.com/tanzhijir-04/Envly/engine/internal/state"
 	"github.com/tanzhijir-04/Envly/engine/internal/store"
 	"github.com/tanzhijir-04/Envly/engine/internal/verify"
+	"github.com/tanzhijir-04/Envly/engine/internal/windowctrl"
 )
 
 func main() {
@@ -55,6 +56,7 @@ func main() {
 	}
 
 	srv := api.NewServer(settingsStore, storeDB, applier, hub, exec, ver, detector, *webDir, "0.3.0")
+	srv.SetWindowController(windowctrl.Controller{})
 	log.Printf("Envly engine listening on http://%s (data: %s, simulate: %v)", *addr, *dataDir, *simulate)
 	if *launchUI != "" {
 		go launchAndWatchUI(*launchUI)

@@ -228,3 +228,23 @@ func TestRestoreEnvCallsRestorer(t *testing.T) {
 		t.Fatalf("status %d, called %v, body %s", rec.Code, restorer.called, rec.Body.String())
 	}
 }
+
+type fakeWindowController struct {
+	action string
+	err    error
+}
+
+func (f *fakeWindowController) Action(action string) error {
+	f.action = action
+	return f.err
+}
+
+func TestWindowActionCallsController(t *testing.T) {
+	fc := &fakeWindowController{}
+	srv := newTestServer(t, executor.Simulated{})
+	srv.SetWindowController(fc)
+	rec := doReq(t, srv, http.MethodPost, "/api/window/action", `{"action":"minimize"}`)
+	if rec.Code != http.StatusOK || fc.action != "minimize" {
+		t.Fatalf("status %d action %q body %s", rec.Code, fc.action, rec.Body.String())
+	}
+}

@@ -291,3 +291,28 @@ func (s *Server) handleRestoreEnv(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
 }
+
+type windowActionRequest struct {
+	Action string `json:"action"`
+}
+
+func (s *Server) handleWindowAction(w http.ResponseWriter, r *http.Request) {
+	if s.wc == nil {
+		writeJSON(w, http.StatusNotImplemented, map[string]string{"error": "window control not supported"})
+		return
+	}
+	var req windowActionRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid body"})
+		return
+	}
+	if req.Action == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "action required"})
+		return
+	}
+	if err := s.wc.Action(req.Action); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
+}

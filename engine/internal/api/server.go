@@ -27,10 +27,15 @@ type EnvRestorer interface {
 	Restore(ctx context.Context) error
 }
 
+type WindowController interface {
+	Action(action string) error
+}
+
 type Server struct {
 	store    *state.Store
 	records  RecordStore
 	restorer EnvRestorer
+	wc       WindowController
 	hub      *events.Hub
 	exec     executor.Executor
 	ver      *verify.Verifier
@@ -49,6 +54,10 @@ func NewServer(settings *state.Store, records RecordStore, restorer EnvRestorer,
 	return &Server{store: settings, records: records, restorer: restorer, hub: hub, exec: exec, ver: ver, net: net, webDir: webDir, version: version}
 }
 
+func (s *Server) SetWindowController(wc WindowController) {
+	s.wc = wc
+}
+
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/health", s.handleHealth)
@@ -63,6 +72,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /api/settings/restore-env", s.handleRestoreEnv)
 	mux.HandleFunc("GET /api/report", s.handleReport)
 	mux.HandleFunc("GET /api/network/status", s.handleNetworkStatus)
+	mux.HandleFunc("POST /api/window/action", s.handleWindowAction)
 	mux.Handle("/", s.staticHandler())
 	return logRequests(mux)
 }

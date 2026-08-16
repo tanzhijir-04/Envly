@@ -71,14 +71,7 @@ function refreshCounts() {
 
 function renderHero() {
   const hero = el("div", "hero");
-  const left = el("div", "hero-left");
-  left.append(el("h1", "", t(state.lang, "welcome.title")), el("p", "subtitle", t(state.lang, "welcome.subtitle")));
-  const steps = el("div", "steps");
-  for (const key of ["step.template", "step.checklist", "step.run"]) {
-    const pill = el("span", "step-pill" + (key === "step.template" ? " on" : ""), t(state.lang, key));
-    steps.append(pill);
-  }
-  hero.append(left, steps);
+  hero.append(el("h1", "", t(state.lang, "welcome.title")), el("p", "subtitle", t(state.lang, "welcome.subtitle")));
   return hero;
 }
 
@@ -372,6 +365,16 @@ async function init() {
 window.addEventListener("error", (event) => {
   console.error("Envly window error:", event.error || event.message);
   showError(String(event.error || event.message));
+});
+
+document.querySelectorAll(".win-btn").forEach((btn) => {
+  btn.addEventListener("click", async () => {
+    try {
+      await postJSON("/api/window/action", { action: btn.dataset.action });
+    } catch (err) {
+      showError(t(state.lang, "error.network", { message: err.message }));
+    }
+  });
 });
 
 init();
