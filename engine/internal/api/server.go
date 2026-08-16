@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -63,7 +64,14 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/report", s.handleReport)
 	mux.HandleFunc("GET /api/network/status", s.handleNetworkStatus)
 	mux.Handle("/", s.staticHandler())
-	return mux
+	return logRequests(mux)
+}
+
+func logRequests(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%s %s", r.Method, r.URL.Path)
+		next.ServeHTTP(w, r)
+	})
 }
 
 func (s *Server) staticHandler() http.Handler {

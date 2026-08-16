@@ -213,7 +213,17 @@ function showError(message) {
   let banner = document.querySelector(".banner");
   if (!banner) {
     banner = el("div", "banner");
-    document.querySelector(".footer").prepend(banner);
+    const footer = document.querySelector(".footer");
+    if (footer) {
+      footer.prepend(banner);
+    } else {
+      banner.style.position = "fixed";
+      banner.style.top = "60px";
+      banner.style.left = "22px";
+      banner.style.right = "22px";
+      banner.style.zIndex = "99";
+      document.body.appendChild(banner);
+    }
   }
   banner.textContent = message;
 }
@@ -243,19 +253,29 @@ document.querySelectorAll("[data-lang]").forEach((btn) => {
 });
 
 async function init() {
-  const catalog = await getJSON("/api/catalog");
-  state.tools = catalog.tools;
-  state.groups = catalog.groups;
-  state.templates = await getJSON("/api/templates");
-  state.planItems = [];
-  const settings = await getJSON("/api/settings");
-  state.lang = settings.language || "zh";
-  state.region = settings.region || "auto";
-  document.documentElement.lang = state.lang;
-  document.querySelectorAll("[data-lang]").forEach((b) => b.classList.toggle("on", b.dataset.lang === state.lang));
-  await loadPlanStatus();
-  await loadReport();
-  render();
+  try {
+    const catalog = await getJSON("/api/catalog");
+    state.tools = catalog.tools;
+    state.groups = catalog.groups;
+    state.templates = await getJSON("/api/templates");
+    state.planItems = [];
+    const settings = await getJSON("/api/settings");
+    state.lang = settings.language || "zh";
+    state.region = settings.region || "auto";
+    document.documentElement.lang = state.lang;
+    document.querySelectorAll("[data-lang]").forEach((b) => b.classList.toggle("on", b.dataset.lang === state.lang));
+    await loadPlanStatus();
+    await loadReport();
+    render();
+  } catch (err) {
+    console.error("Envly init failed:", err);
+    showError(t(state.lang, "error.network", { message: err.message }));
+  }
 }
+
+window.addEventListener("error", (event) => {
+  console.error("Envly window error:", event.error || event.message);
+  showError(String(event.error || event.message));
+});
 
 init();
