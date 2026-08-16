@@ -22,6 +22,8 @@ func TestParseVersion(t *testing.T) {
 		{"v22.14.0", "22.14.0"},
 		{"22.14.0\nmore", "22.14.0"},
 		{"version 3.12.8", "3.12.8"},
+		{"git version 2.55.0.windows.1", "2.55.0.windows.1"},
+		{"Version 7.0.2", "7.0.2"},
 		{"  1.2.3  ", "1.2.3"},
 	}
 	for _, c := range cases {

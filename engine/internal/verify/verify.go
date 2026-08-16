@@ -35,7 +35,8 @@ func ParseVersion(output string) string {
 	if i := strings.IndexByte(line, '\n'); i >= 0 {
 		line = strings.TrimSpace(line[:i])
 	}
-	line = strings.TrimPrefix(line, "version ")
-	line = strings.TrimPrefix(line, "v")
+	for _, prefix := range []string{"git version ", "version ", "Version ", "v"} {
+		line = strings.TrimPrefix(line, prefix)
+	}
 	return line
 }
