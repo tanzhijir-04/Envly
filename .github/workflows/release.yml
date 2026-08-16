@@ -20,11 +20,11 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            engine_ext: ".exe"
+            engine_name: "envly-engine.exe"
           - os: macos-latest
-            engine_ext: ""
+            engine_name: "envly-engine-darwin"
           - os: ubuntu-latest
-            engine_ext: ""
+            engine_name: "envly-engine-linux"
     runs-on: ${{ matrix.os }}
     continue-on-error: true
     steps:
@@ -39,7 +39,7 @@ jobs:
 
       - name: Build engine binary
         working-directory: engine
-        run: go build -o ../envly-engine${{ matrix.engine_ext }} ./cmd/envly
+        run: go build -o ../${{ matrix.engine_name }} ./cmd/envly
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -71,7 +71,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
         run: |
-          assets=$(find . -maxdepth 6 \( -name "Envly*.msi" -o -name "Envly*.dmg" -o -name "Envly*.deb" -o -name "Envly*.AppImage" -o -name "Envly*.app" -o -name "envly-engine*" \) 2>/dev/null)
+          assets=$(find . -maxdepth 6 \( -name "Envly*.msi" -o -name "Envly*.dmg" -o -name "Envly*.deb" -o -name "Envly*.AppImage" -o -name "Envly*.app" -o -name "envly*.deb" -o -name "envly*.AppImage" -o -name "envly-binary*" -o -name "envly-engine*" \) 2>/dev/null)
           echo "Uploading to release $RELEASE_TAG:"
           echo "$assets"
           if [ -n "$assets" ]; then
