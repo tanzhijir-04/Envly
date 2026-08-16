@@ -16,12 +16,18 @@
 
 * { box-sizing: border-box; margin: 0; }
 
+html {
+  background: var(--ground);
+  min-height: 100%;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
   background: var(--ground);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   border-radius: 8px;
+  min-height: 100vh;
 }
 
 .topbar {
