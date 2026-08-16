@@ -109,13 +109,12 @@ func launchAndWatchUI(path string) {
 	os.Exit(0)
 }
 
-// ensureFrameless 轮询等待 Envly 窗口出现，然后移除原生标题栏。
+// ensureFrameless 持续确保 Envly 窗口无标题栏（窗口重建后样式会恢复，需周期修复）。
 func ensureFrameless() {
-	for i := 0; i < 30; i++ {
+	for {
 		if err := windowctrl.EnsureFrameless(); err == nil {
-			log.Printf("frameless window ready")
-			return
+			log.Printf("frameless window ensured")
 		}
-		time.Sleep(3 * time.Second)
+		time.Sleep(5 * time.Second)
 	}
 }
