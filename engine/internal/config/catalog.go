@@ -8,9 +8,11 @@ type Group struct {
 }
 
 type InstallSpec struct {
-	Method    string `json:"method"`
-	Package   string `json:"package"`
-	VerifyCmd string `json:"verify_cmd,omitempty"`
+	Method       string   `json:"method"`
+	Package      string   `json:"package"`
+	VerifyCmd    string   `json:"verify_cmd,omitempty"`
+	DownloadURLs []string `json:"download_urls,omitempty"`
+	SilentArgs   string   `json:"silent_args,omitempty"`
 }
 
 type Tool struct {
