@@ -80,6 +80,7 @@ func (s *Server) staticHandler() http.Handler {
 			http.NotFound(w, r)
 			return
 		}
+		w.Header().Set("Cache-Control", "no-store")
 		clean := filepath.Clean(strings.TrimPrefix(r.URL.Path, "/"))
 		p := filepath.Join(s.webDir, clean)
 		if r.URL.Path == "/" {
