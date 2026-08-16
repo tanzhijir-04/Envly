@@ -16,11 +16,12 @@ import (
 	"github.com/tanzhijir-04/Envly/engine/internal/executor"
 	"github.com/tanzhijir-04/Envly/engine/internal/network"
 	"github.com/tanzhijir-04/Envly/engine/internal/state"
+	"github.com/tanzhijir-04/Envly/engine/internal/store"
 	"github.com/tanzhijir-04/Envly/engine/internal/verify"
 )
 
 func newTestServer(t *testing.T, exec executor.Executor) *Server {
-	return NewServer(state.New(t.TempDir()), events.NewHub(), exec, nil, nil, "", "test")
+	return NewServer(state.New(t.TempDir()), store.New(t.TempDir()), events.NewHub(), exec, nil, nil, "", "test")
 }
 
 func doReq(t *testing.T, srv *Server, method, path, body string) *httptest.ResponseRecorder {
@@ -167,7 +168,7 @@ func (f *fakeVerifyRunner) Run(context.Context, string, ...string) (string, erro
 func TestPlanMarksInstalled(t *testing.T) {
 	run := &fakeVerifyRunner{ok: true, version: "22.14.0"}
 	ver := verify.New(run)
-	srv := NewServer(state.New(t.TempDir()), events.NewHub(), executor.Simulated{}, ver, nil, "", "test")
+	srv := NewServer(state.New(t.TempDir()), store.New(t.TempDir()), events.NewHub(), executor.Simulated{}, ver, nil, "", "test")
 	rec := doReq(t, srv, http.MethodPost, "/api/plan", `{"tool_ids":["nodejs"]}`)
 	if !strings.Contains(rec.Body.String(), `"status":"installed"`) {
 		t.Fatalf("expected installed status, got %s", rec.Body.String())
@@ -184,9 +185,27 @@ func TestRunRejectsUnknownTool(t *testing.T) {
 
 func TestNetworkStatusReturnsRegion(t *testing.T) {
 	detector := network.NewDetector(func(context.Context, string) error { return nil })
-	srv := NewServer(state.New(t.TempDir()), events.NewHub(), executor.Simulated{}, nil, detector, "", "test")
+	srv := NewServer(state.New(t.TempDir()), store.New(t.TempDir()), events.NewHub(), executor.Simulated{}, nil, detector, "", "test")
 	rec := doReq(t, srv, http.MethodGet, "/api/network/status", "")
 	if !strings.Contains(rec.Body.String(), `"region":"global"`) {
 		t.Fatalf("expected global region, got %s", rec.Body.String())
+	}
+}
+
+func TestReportReturnsLastStatus(t *testing.T) {
+	srv := newTestServer(t, executor.Simulated{Delay: time.Millisecond})
+	ch, unsubscribe := srv.hub.Subscribe()
+	defer unsubscribe()
+	rec := doReq(t, srv, http.MethodPost, "/api/run", `{"tool_ids":["nodejs"]}`)
+	if rec.Code != http.StatusAccepted {
+		t.Fatalf("status %d", rec.Code)
+	}
+	waitRunDone(t, ch, "success")
+	rec = doReq(t, srv, http.MethodGet, "/api/report", "")
+	if !strings.Contains(rec.Body.String(), `"status":"success"`) {
+		t.Fatalf("expected success status, got %s", rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), `"records"`) {
+		t.Fatalf("expected records field, got %s", rec.Body.String())
 	}
 }

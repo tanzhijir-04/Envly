@@ -13,6 +13,7 @@ import (
 	"github.com/tanzhijir-04/Envly/engine/internal/executor"
 	"github.com/tanzhijir-04/Envly/engine/internal/network"
 	"github.com/tanzhijir-04/Envly/engine/internal/state"
+	"github.com/tanzhijir-04/Envly/engine/internal/store"
 )
 
 func writeJSON(w http.ResponseWriter, code int, v any) {
@@ -164,6 +165,9 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 				status = "failed"
 			}
 		}
+		s.reportMu.Lock()
+		s.lastStatus = status
+		s.reportMu.Unlock()
 		s.hub.Publish(events.Event{Type: "run_done", RunID: runID, Status: status, MessageKey: "run.done"})
 		s.runMu.Lock()
 		if s.curRunID == runID {
@@ -261,4 +265,17 @@ func (s *Server) handleNetworkStatus(w http.ResponseWriter, r *http.Request) {
 		status = network.Status{Region: settings.Region, Reason: "manual"}
 	}
 	writeJSON(w, http.StatusOK, status)
+}
+
+func (s *Server) handleReport(w http.ResponseWriter, r *http.Request) {
+	s.reportMu.Lock()
+	status := s.lastStatus
+	s.reportMu.Unlock()
+	var records []store.Record
+	var envOps []store.EnvOp
+	if s.records != nil {
+		records, _ = s.records.Records()
+		envOps, _ = s.records.EnvOps()
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"status": status, "records": records, "env_ops": envOps})
 }

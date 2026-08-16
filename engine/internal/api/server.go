@@ -13,11 +13,18 @@ import (
 	"github.com/tanzhijir-04/Envly/engine/internal/executor"
 	"github.com/tanzhijir-04/Envly/engine/internal/network"
 	"github.com/tanzhijir-04/Envly/engine/internal/state"
+	"github.com/tanzhijir-04/Envly/engine/internal/store"
 	"github.com/tanzhijir-04/Envly/engine/internal/verify"
 )
 
+type RecordStore interface {
+	Records() ([]store.Record, error)
+	EnvOps() ([]store.EnvOp, error)
+}
+
 type Server struct {
 	store   *state.Store
+	records RecordStore
 	hub     *events.Hub
 	exec    executor.Executor
 	ver     *verify.Verifier
@@ -28,10 +35,12 @@ type Server struct {
 	runMu     sync.Mutex
 	curRunID  string
 	curCancel context.CancelFunc
+	reportMu  sync.Mutex
+	lastStatus string
 }
 
-func NewServer(store *state.Store, hub *events.Hub, exec executor.Executor, ver *verify.Verifier, net *network.Detector, webDir, version string) *Server {
-	return &Server{store: store, hub: hub, exec: exec, ver: ver, net: net, webDir: webDir, version: version}
+func NewServer(settings *state.Store, records RecordStore, hub *events.Hub, exec executor.Executor, ver *verify.Verifier, net *network.Detector, webDir, version string) *Server {
+	return &Server{store: settings, records: records, hub: hub, exec: exec, ver: ver, net: net, webDir: webDir, version: version}
 }
 
 func (s *Server) Handler() http.Handler {
@@ -45,6 +54,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/events", s.handleEvents)
 	mux.HandleFunc("GET /api/settings", s.handleGetSettings)
 	mux.HandleFunc("POST /api/settings", s.handlePostSettings)
+	mux.HandleFunc("GET /api/report", s.handleReport)
 	mux.HandleFunc("GET /api/network/status", s.handleNetworkStatus)
 	mux.Handle("/", s.staticHandler())
 	return mux
