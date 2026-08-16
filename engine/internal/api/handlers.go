@@ -279,3 +279,15 @@ func (s *Server) handleReport(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"status": status, "records": records, "env_ops": envOps})
 }
+
+func (s *Server) handleRestoreEnv(w http.ResponseWriter, r *http.Request) {
+	if s.restorer == nil {
+		writeJSON(w, http.StatusNotImplemented, map[string]string{"error": "restore not supported"})
+		return
+	}
+	if err := s.restorer.Restore(r.Context()); err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
+}

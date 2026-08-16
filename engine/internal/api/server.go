@@ -22,15 +22,20 @@ type RecordStore interface {
 	EnvOps() ([]store.EnvOp, error)
 }
 
+type EnvRestorer interface {
+	Restore(ctx context.Context) error
+}
+
 type Server struct {
-	store   *state.Store
-	records RecordStore
-	hub     *events.Hub
-	exec    executor.Executor
-	ver     *verify.Verifier
-	net     *network.Detector
-	webDir  string
-	version string
+	store    *state.Store
+	records  RecordStore
+	restorer EnvRestorer
+	hub      *events.Hub
+	exec     executor.Executor
+	ver      *verify.Verifier
+	net      *network.Detector
+	webDir   string
+	version  string
 
 	runMu     sync.Mutex
 	curRunID  string
@@ -39,8 +44,8 @@ type Server struct {
 	lastStatus string
 }
 
-func NewServer(settings *state.Store, records RecordStore, hub *events.Hub, exec executor.Executor, ver *verify.Verifier, net *network.Detector, webDir, version string) *Server {
-	return &Server{store: settings, records: records, hub: hub, exec: exec, ver: ver, net: net, webDir: webDir, version: version}
+func NewServer(settings *state.Store, records RecordStore, restorer EnvRestorer, hub *events.Hub, exec executor.Executor, ver *verify.Verifier, net *network.Detector, webDir, version string) *Server {
+	return &Server{store: settings, records: records, restorer: restorer, hub: hub, exec: exec, ver: ver, net: net, webDir: webDir, version: version}
 }
 
 func (s *Server) Handler() http.Handler {
@@ -54,6 +59,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/events", s.handleEvents)
 	mux.HandleFunc("GET /api/settings", s.handleGetSettings)
 	mux.HandleFunc("POST /api/settings", s.handlePostSettings)
+	mux.HandleFunc("POST /api/settings/restore-env", s.handleRestoreEnv)
 	mux.HandleFunc("GET /api/report", s.handleReport)
 	mux.HandleFunc("GET /api/network/status", s.handleNetworkStatus)
 	mux.Handle("/", s.staticHandler())

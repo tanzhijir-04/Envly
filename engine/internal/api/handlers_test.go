@@ -21,7 +21,7 @@ import (
 )
 
 func newTestServer(t *testing.T, exec executor.Executor) *Server {
-	return NewServer(state.New(t.TempDir()), store.New(t.TempDir()), events.NewHub(), exec, nil, nil, "", "test")
+	return NewServer(state.New(t.TempDir()), store.New(t.TempDir()), nil, events.NewHub(), exec, nil, nil, "", "test")
 }
 
 func doReq(t *testing.T, srv *Server, method, path, body string) *httptest.ResponseRecorder {
@@ -168,7 +168,7 @@ func (f *fakeVerifyRunner) Run(context.Context, string, ...string) (string, erro
 func TestPlanMarksInstalled(t *testing.T) {
 	run := &fakeVerifyRunner{ok: true, version: "22.14.0"}
 	ver := verify.New(run)
-	srv := NewServer(state.New(t.TempDir()), store.New(t.TempDir()), events.NewHub(), executor.Simulated{}, ver, nil, "", "test")
+	srv := NewServer(state.New(t.TempDir()), store.New(t.TempDir()), nil, events.NewHub(), executor.Simulated{}, ver, nil, "", "test")
 	rec := doReq(t, srv, http.MethodPost, "/api/plan", `{"tool_ids":["nodejs"]}`)
 	if !strings.Contains(rec.Body.String(), `"status":"installed"`) {
 		t.Fatalf("expected installed status, got %s", rec.Body.String())
@@ -185,7 +185,7 @@ func TestRunRejectsUnknownTool(t *testing.T) {
 
 func TestNetworkStatusReturnsRegion(t *testing.T) {
 	detector := network.NewDetector(func(context.Context, string) error { return nil })
-	srv := NewServer(state.New(t.TempDir()), store.New(t.TempDir()), events.NewHub(), executor.Simulated{}, nil, detector, "", "test")
+	srv := NewServer(state.New(t.TempDir()), store.New(t.TempDir()), nil, events.NewHub(), executor.Simulated{}, nil, detector, "", "test")
 	rec := doReq(t, srv, http.MethodGet, "/api/network/status", "")
 	if !strings.Contains(rec.Body.String(), `"region":"global"`) {
 		t.Fatalf("expected global region, got %s", rec.Body.String())
@@ -207,5 +207,24 @@ func TestReportReturnsLastStatus(t *testing.T) {
 	}
 	if !strings.Contains(rec.Body.String(), `"records"`) {
 		t.Fatalf("expected records field, got %s", rec.Body.String())
+	}
+}
+
+type fakeRestorer struct {
+	called bool
+	err    error
+}
+
+func (f *fakeRestorer) Restore(context.Context) error {
+	f.called = true
+	return f.err
+}
+
+func TestRestoreEnvCallsRestorer(t *testing.T) {
+	restorer := &fakeRestorer{}
+	srv := NewServer(state.New(t.TempDir()), store.New(t.TempDir()), restorer, events.NewHub(), executor.Simulated{}, nil, nil, "", "test")
+	rec := doReq(t, srv, http.MethodPost, "/api/settings/restore-env", "")
+	if rec.Code != http.StatusOK || !restorer.called {
+		t.Fatalf("status %d, called %v, body %s", rec.Code, restorer.called, rec.Body.String())
 	}
 }

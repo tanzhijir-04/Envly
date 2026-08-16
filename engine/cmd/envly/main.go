@@ -52,7 +52,7 @@ func main() {
 		)
 	}
 
-	srv := api.NewServer(settingsStore, hub, exec, ver, detector, *webDir, "0.2.0")
+	srv := api.NewServer(settingsStore, storeDB, applier, hub, exec, ver, detector, *webDir, "0.3.0")
 	log.Printf("Envly engine listening on http://%s (data: %s, simulate: %v)", *addr, *dataDir, *simulate)
 	if err := http.ListenAndServe(*addr, srv.Handler()); err != nil {
 		log.Fatal(err)
