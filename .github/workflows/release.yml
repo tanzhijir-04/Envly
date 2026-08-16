@@ -1,0 +1,76 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Target release tag to upload assets to"
+        required: false
+        default: "v1.0.0"
+
+jobs:
+  assets:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            engine_ext: ".exe"
+          - os: macos-latest
+            engine_ext: ""
+          - os: ubuntu-latest
+            engine_ext: ""
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build engine binary
+        working-directory: engine
+        run: go build -o ../envly-engine${{ matrix.engine_ext }} ./cmd/envly
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install pake-cli
+        run: npm install -g pake-cli
+
+      - name: Install Linux system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.0-dev build-essential curl wget file \
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - name: Package desktop app with Pake
+        run: pake http://127.0.0.1:17521 --name Envly --icon assets/icon.png --width 1200 --height 780 --keep-binary
+
+      - name: Locate packaged artifacts
+        shell: bash
+        run: |
+          echo "--- cwd files ---"
+          ls -la
+          echo "--- find ---"
+          find . -maxdepth 6 \( -name "Envly*.msi" -o -name "Envly*.dmg" -o -name "Envly*.deb" -o -name "Envly*.AppImage" -o -name "Envly*.app" -o -name "envly-engine*" \) 2>/dev/null
+
+      - name: Upload assets to release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        run: |
+          assets=$(find . -maxdepth 6 \( -name "Envly*.msi" -o -name "Envly*.dmg" -o -name "Envly*.deb" -o -name "Envly*.AppImage" -o -name "Envly*.app" -o -name "envly-engine*" \) 2>/dev/null)
+          echo "Uploading to release $RELEASE_TAG:"
+          echo "$assets"
+          if [ -n "$assets" ]; then
+            gh release upload "$RELEASE_TAG" $assets --clobber
+          fi
