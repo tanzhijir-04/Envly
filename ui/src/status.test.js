@@ -15,4 +15,8 @@ describe("summarize", () => {
   it("ignores run_done", () => {
     expect(summarize([{ type: "run_done" }])).toEqual({ success: 0, failed: 0, skipped: 0 });
   });
+
+  it("counts run_done via params", () => {
+    expect(summarize([{ type: "run_done", status: "success" }])).toEqual({ success: 0, failed: 0, skipped: 0 });
+  });
 });

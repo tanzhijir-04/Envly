@@ -11,6 +11,7 @@ const state = {
   templates: [],
   selected: [],
   planItems: [],
+  report: null,
 };
 
 function el(tag, className, text) {
@@ -38,7 +39,7 @@ function render() {
   app.innerHTML = "";
   const hero = el("div", "hero");
   hero.append(el("h1", "", t(state.lang, "welcome.title")), el("p", "subtitle", t(state.lang, "welcome.subtitle")));
-  app.append(hero, renderTemplates(), renderRegion(), renderChecklist(), renderFooter(), renderLog());
+  app.append(hero, renderTemplates(), renderRegion(), renderChecklist(), renderFooter(), renderLog(), renderSettings(), renderReport());
 }
 
 function renderTemplates() {
@@ -125,6 +126,56 @@ function renderLog() {
   return wrap;
 }
 
+function renderSettings() {
+  const wrap = el("div");
+  wrap.append(el("div", "section-label", t(state.lang, "settings.title")));
+  const panel = el("div", "panel");
+  const row = el("div", "row");
+  const btn = el("button", "cta", t(state.lang, "settings.restore"));
+  btn.addEventListener("click", async () => {
+    try {
+      await postJSON("/api/settings/restore-env", {});
+      showError(t(state.lang, "settings.restore.done"));
+      setTimeout(clearError, 3000);
+      await loadReport();
+      render();
+    } catch (err) {
+      showError(t(state.lang, "settings.restore.fail", { message: err.message }));
+    }
+  });
+  row.append(btn);
+  panel.append(row);
+  wrap.append(panel);
+  return wrap;
+}
+
+function renderReport() {
+  const wrap = el("div");
+  wrap.append(el("div", "section-label", t(state.lang, "report.title")));
+  const panel = el("div", "panel");
+  const data = state.report || {};
+  const head = el("div", "group-head");
+  head.append(el("b", "", t(state.lang, "report.status", { status: data.status || "—" })));
+  panel.append(head);
+  const records = (data.records || []).map((r) => `${r.name} ${r.version || ""} · ${r.method}`).join("\n") || t(state.lang, "report.empty");
+  const envOps = (data.env_ops || []).map((op) => `${op.key}: ${op.before || "—"} → ${op.after || "—"}`).join("\n") || t(state.lang, "report.empty");
+  const recordsSection = el("div", "group");
+  recordsSection.append(el("pre", "report-pre", `${t(state.lang, "report.records")}\n${records}`));
+  const envSection = el("div", "group");
+  envSection.append(el("pre", "report-pre", `${t(state.lang, "report.envops")}\n${envOps}`));
+  panel.append(recordsSection, envSection);
+  wrap.append(panel);
+  return wrap;
+}
+
+async function loadReport() {
+  try {
+    state.report = await getJSON("/api/report");
+  } catch {
+    state.report = null;
+  }
+}
+
 function appendLog(line) {
   const log = document.querySelector(".log");
   if (!log) return;
@@ -146,6 +197,7 @@ async function runFlow() {
       if (event.type === "run_done") {
         appendLog(`${mark} ${text} · ${event.status}`);
         unsubscribe();
+        await loadReport();
         cta.disabled = false;
         return;
       }
@@ -202,6 +254,7 @@ async function init() {
   document.documentElement.lang = state.lang;
   document.querySelectorAll("[data-lang]").forEach((b) => b.classList.toggle("on", b.dataset.lang === state.lang));
   await loadPlanStatus();
+  await loadReport();
   render();
 }
 
