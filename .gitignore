@@ -10,6 +10,7 @@ ui/dist/
 
 # Envly runtime
 .envly/
+.smoke/
 *.log
 
 # OS
