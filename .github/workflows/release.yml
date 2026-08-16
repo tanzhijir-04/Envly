@@ -10,6 +10,9 @@ on:
         required: false
         default: "v1.0.0"
 
+permissions:
+  contents: write
+
 jobs:
   assets:
     strategy:
@@ -48,7 +51,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.0-dev build-essential curl wget file \
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
             libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
 
       - name: Package desktop app with Pake
