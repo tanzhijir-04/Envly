@@ -1,6 +1,7 @@
 import { getJSON, postJSON, subscribeEvents } from "./api.js";
 import { t } from "./i18n.js";
 import { applyTemplate, toggle } from "./plan.js";
+import { initMotion, prefersReducedMotion } from "./motion.js";
 
 const app = document.getElementById("app");
 const state = {
@@ -42,6 +43,7 @@ function render() {
   app.append(renderHero(), renderTemplates(), renderRegion(), renderChecklist(), renderFooter(), renderLog(), renderSettings(), renderReport());
   window.scrollTo(0, scrollY);
   if (state.running) showCancelButton();
+  initMotion();
 }
 
 function refreshTemplates() {
@@ -242,7 +244,11 @@ function appendLog(line) {
   const log = document.querySelector(".log");
   if (!log) return;
   const time = new Date().toLocaleTimeString();
-  log.append(el("div", "", `[${time}] ${line}`));
+  const row = el("div", "", `[${time}] ${line}`);
+  log.append(row);
+  if (window.gsap && !prefersReducedMotion()) {
+    window.gsap.fromTo(row, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.25, ease: "power3.out" });
+  }
   log.scrollTop = log.scrollHeight;
 }
 
