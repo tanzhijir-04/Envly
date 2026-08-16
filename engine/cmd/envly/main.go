@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"time"
 
@@ -27,6 +28,7 @@ func main() {
 	webDir := flag.String("web-dir", "ui", "frontend static directory (relative to cwd)")
 	dataDir := flag.String("data-dir", defaultDataDir(), "settings and records directory")
 	simulate := flag.Bool("simulate", false, "use simulated executor (no real installs)")
+	launchUI := flag.String("launch-ui", "", "path to Pake UI exe to launch after server start")
 	flag.Parse()
 
 	run := runner.OS{}
@@ -54,6 +56,9 @@ func main() {
 
 	srv := api.NewServer(settingsStore, storeDB, applier, hub, exec, ver, detector, *webDir, "0.3.0")
 	log.Printf("Envly engine listening on http://%s (data: %s, simulate: %v)", *addr, *dataDir, *simulate)
+	if *launchUI != "" {
+		go launchAndWatchUI(*launchUI)
+	}
 	if err := http.ListenAndServe(*addr, srv.Handler()); err != nil {
 		log.Fatal(err)
 	}
@@ -87,3 +92,14 @@ func httpProbe(ctx context.Context, url string) error {
 type httpError struct{ code int }
 
 func (e *httpError) Error() string { return http.StatusText(e.code) }
+
+func launchAndWatchUI(path string) {
+	cmd := exec.Command(path)
+	if err := cmd.Start(); err != nil {
+		log.Printf("failed to launch UI: %v", err)
+		return
+	}
+	_ = cmd.Wait()
+	log.Printf("UI window closed, shutting down engine")
+	os.Exit(0)
+}
