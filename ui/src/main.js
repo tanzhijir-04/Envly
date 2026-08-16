@@ -10,6 +10,7 @@ const state = {
   groups: [],
   templates: [],
   selected: [],
+  planItems: [],
 };
 
 function el(tag, className, text) {
@@ -21,9 +22,15 @@ function el(tag, className, text) {
 
 function groupItems() {
   const selected = new Set(state.selected);
+  const statusMap = new Map((state.planItems || []).map((item) => [item.tool_id, item]));
   return state.groups.map((group) => ({
     ...group,
-    items: state.tools.filter((tool) => tool.group_id === group.id).map((tool) => ({ ...tool, checked: selected.has(tool.id) })),
+    items: state.tools
+      .filter((tool) => tool.group_id === group.id)
+      .map((tool) => {
+        const plan = statusMap.get(tool.id);
+        return { ...tool, checked: selected.has(tool.id), status: plan ? plan.status : "pending", version: plan ? plan.version : "" };
+      }),
   }));
 }
 
@@ -47,7 +54,7 @@ function renderTemplates() {
     );
     card.addEventListener("click", () => {
       state.selected = applyTemplate(state.selected, tmpl.tool_ids);
-      render();
+      loadPlanStatus().then(render);
     });
     grid.append(card);
   }
@@ -87,9 +94,12 @@ function renderChecklist() {
     for (const item of group.items) {
       const row = el("div", item.checked ? "row on" : "row");
       row.append(el("span", "box", "✓"), el("span", "name", item[`name_${state.lang}`]), el("span", "method", item.method));
+      if (item.status === "installed") {
+        row.append(el("span", "badge", t(state.lang, "tool.installed", { version: item.version || "" })));
+      }
       row.addEventListener("click", () => {
         state.selected = toggle(state.selected, item.id);
-        render();
+        loadPlanStatus().then(render);
       });
       section.append(row);
     }
@@ -126,18 +136,48 @@ function appendLog(line) {
 async function runFlow() {
   const cta = document.querySelector(".cta");
   cta.disabled = true;
+  clearError();
+  try {
+    const plan = await postJSON("/api/plan", { tool_ids: state.selected });
+    const run = await postJSON("/api/run", { tool_ids: plan.items.map((item) => item.tool_id) });
+    const unsubscribe = subscribeEvents(run.run_id, (event) => {
+      const text = t(state.lang, event.message_key, event.params || {});
+      const mark = event.type === "success" ? "✓" : event.type === "failed" ? "✗" : event.type === "skipped" ? "⏭" : "→";
+      if (event.type === "run_done") {
+        appendLog(`${mark} ${text} · ${event.status}`);
+        unsubscribe();
+        cta.disabled = false;
+        return;
+      }
+      appendLog(`${mark} ${text}`);
+    });
+  } catch (err) {
+    showError(t(state.lang, "error.network", { message: err.message }));
+    cta.disabled = false;
+  }
+}
+
+function showError(message) {
+  let banner = document.querySelector(".banner");
+  if (!banner) {
+    banner = el("div", "banner");
+    document.querySelector(".footer").prepend(banner);
+  }
+  banner.textContent = message;
+}
+
+function clearError() {
+  const banner = document.querySelector(".banner");
+  if (banner) banner.remove();
+}
+
+async function loadPlanStatus() {
+  if (state.selected.length === 0) {
+    state.planItems = [];
+    return;
+  }
   const plan = await postJSON("/api/plan", { tool_ids: state.selected });
-  const run = await postJSON("/api/run", { tool_ids: plan.items.map((item) => item.tool_id) });
-  const unsubscribe = subscribeEvents(run.run_id, (event) => {
-    const text = t(state.lang, event.message_key, event.params || {});
-    if (event.type === "run_done") {
-      appendLog(`${text} · ${event.status}`);
-      unsubscribe();
-      cta.disabled = false;
-      return;
-    }
-    appendLog(text);
-  });
+  state.planItems = plan.items;
 }
 
 document.querySelectorAll("[data-lang]").forEach((btn) => {
@@ -155,11 +195,13 @@ async function init() {
   state.tools = catalog.tools;
   state.groups = catalog.groups;
   state.templates = await getJSON("/api/templates");
+  state.planItems = [];
   const settings = await getJSON("/api/settings");
   state.lang = settings.language || "zh";
   state.region = settings.region || "auto";
   document.documentElement.lang = state.lang;
   document.querySelectorAll("[data-lang]").forEach((b) => b.classList.toggle("on", b.dataset.lang === state.lang));
+  await loadPlanStatus();
   render();
 }
 
