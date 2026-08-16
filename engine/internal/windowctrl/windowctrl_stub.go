@@ -10,3 +10,7 @@ type Controller struct{}
 func (Controller) Action(action string) error {
 	return fmt.Errorf("window control not supported on this platform")
 }
+
+func EnsureFrameless() error {
+	return fmt.Errorf("window control not supported on this platform")
+}

@@ -57,6 +57,9 @@ func main() {
 
 	srv := api.NewServer(settingsStore, storeDB, applier, hub, exec, ver, detector, *webDir, "0.3.0")
 	srv.SetWindowController(windowctrl.Controller{})
+	if !*simulate {
+		go ensureFrameless()
+	}
 	log.Printf("Envly engine listening on http://%s (data: %s, simulate: %v)", *addr, *dataDir, *simulate)
 	if *launchUI != "" {
 		go launchAndWatchUI(*launchUI)
@@ -104,4 +107,15 @@ func launchAndWatchUI(path string) {
 	_ = cmd.Wait()
 	log.Printf("UI window closed, shutting down engine")
 	os.Exit(0)
+}
+
+// ensureFrameless 轮询等待 Envly 窗口出现，然后移除原生标题栏。
+func ensureFrameless() {
+	for i := 0; i < 30; i++ {
+		if err := windowctrl.EnsureFrameless(); err == nil {
+			log.Printf("frameless window ready")
+			return
+		}
+		time.Sleep(3 * time.Second)
+	}
 }
