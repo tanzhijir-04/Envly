@@ -1,0 +1,30 @@
+name: build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Go tests
+        working-directory: engine
+        run: go test ./...
+      - name: UI tests
+        working-directory: ui
+        run: npm ci && npm test
+      - name: Build engine
+        working-directory: engine
+        run: go build -o ../dist/envly.exe ./cmd/envly
+      - uses: actions/upload-artifact@v4
+        with:
+          name: envly-engine
+          path: dist/envly.exe
