@@ -23,4 +23,4 @@ try {
 
 # 4. 打包（Windows 产出 msi；--keep-binary 同时保留 exe）
 $icon = Join-Path $PSScriptRoot "..\assets\icon.png"
-pake $UiUrl --name $Name --icon $icon --width 1200 --height 780 --installer-language zh-CN --keep-binary
+pake $UiUrl --name $Name --icon $icon --width 1200 --height 780 --installer-language zh-CN --keep-binary --hide-window-decorations
