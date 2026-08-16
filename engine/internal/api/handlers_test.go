@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -13,11 +14,13 @@ import (
 
 	"github.com/tanzhijir-04/Envly/engine/internal/events"
 	"github.com/tanzhijir-04/Envly/engine/internal/executor"
+	"github.com/tanzhijir-04/Envly/engine/internal/network"
 	"github.com/tanzhijir-04/Envly/engine/internal/state"
+	"github.com/tanzhijir-04/Envly/engine/internal/verify"
 )
 
 func newTestServer(t *testing.T, exec executor.Executor) *Server {
-	return NewServer(state.New(t.TempDir()), events.NewHub(), exec, "", "test")
+	return NewServer(state.New(t.TempDir()), events.NewHub(), exec, nil, nil, "", "test")
 }
 
 func doReq(t *testing.T, srv *Server, method, path, body string) *httptest.ResponseRecorder {
@@ -146,5 +149,44 @@ func waitRunDone(t *testing.T, ch <-chan events.Event, wantStatus string) {
 		case <-deadline:
 			t.Fatalf("timed out waiting for run_done %q", wantStatus)
 		}
+	}
+}
+
+type fakeVerifyRunner struct {
+	ok      bool
+	version string
+}
+
+func (f *fakeVerifyRunner) Run(context.Context, string, ...string) (string, error) {
+	if f.ok {
+		return f.version, nil
+	}
+	return "", errors.New("not found")
+}
+
+func TestPlanMarksInstalled(t *testing.T) {
+	run := &fakeVerifyRunner{ok: true, version: "22.14.0"}
+	ver := verify.New(run)
+	srv := NewServer(state.New(t.TempDir()), events.NewHub(), executor.Simulated{}, ver, nil, "", "test")
+	rec := doReq(t, srv, http.MethodPost, "/api/plan", `{"tool_ids":["nodejs"]}`)
+	if !strings.Contains(rec.Body.String(), `"status":"installed"`) {
+		t.Fatalf("expected installed status, got %s", rec.Body.String())
+	}
+}
+
+func TestRunRejectsUnknownTool(t *testing.T) {
+	srv := newTestServer(t, executor.Simulated{})
+	rec := doReq(t, srv, http.MethodPost, "/api/run", `{"tool_ids":["ghost"]}`)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", rec.Code)
+	}
+}
+
+func TestNetworkStatusReturnsRegion(t *testing.T) {
+	detector := network.NewDetector(func(context.Context, string) error { return nil })
+	srv := NewServer(state.New(t.TempDir()), events.NewHub(), executor.Simulated{}, nil, detector, "", "test")
+	rec := doReq(t, srv, http.MethodGet, "/api/network/status", "")
+	if !strings.Contains(rec.Body.String(), `"region":"global"`) {
+		t.Fatalf("expected global region, got %s", rec.Body.String())
 	}
 }

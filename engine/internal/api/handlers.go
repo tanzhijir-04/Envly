@@ -11,6 +11,7 @@ import (
 	"github.com/tanzhijir-04/Envly/engine/internal/config"
 	"github.com/tanzhijir-04/Envly/engine/internal/events"
 	"github.com/tanzhijir-04/Envly/engine/internal/executor"
+	"github.com/tanzhijir-04/Envly/engine/internal/network"
 	"github.com/tanzhijir-04/Envly/engine/internal/state"
 )
 
@@ -81,11 +82,12 @@ func (s *Server) handlePlan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	type item struct {
-		ToolID string `json:"tool_id"`
-		NameZh string `json:"name_zh"`
-		NameEn string `json:"name_en"`
-		Method string `json:"method"`
-		Status string `json:"status"`
+		ToolID  string `json:"tool_id"`
+		NameZh  string `json:"name_zh"`
+		NameEn  string `json:"name_en"`
+		Method  string `json:"method"`
+		Status  string `json:"status"`
+		Version string `json:"version,omitempty"`
 	}
 	items := make([]item, 0, len(req.ToolIDs))
 	for _, id := range req.ToolIDs {
@@ -95,11 +97,19 @@ func (s *Server) handlePlan(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		spec, ok := t.Install[platformName()]
-		method := "unsupported"
-		if ok {
-			method = spec.Method
+		if !ok {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "unsupported on this platform: " + id})
+			return
 		}
-		items = append(items, item{id, t.NameZh, t.NameEn, method, "pending"})
+		status := "pending"
+		version := ""
+		if s.ver != nil {
+			if v, installed := s.ver.Check(r.Context(), spec.VerifyCmd); installed {
+				status = "installed"
+				version = v
+			}
+		}
+		items = append(items, item{id, t.NameZh, t.NameEn, spec.Method, status, version})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"items": items})
 }
@@ -117,6 +127,17 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 	if len(req.ToolIDs) == 0 {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "empty tool_ids"})
 		return
+	}
+	for _, id := range req.ToolIDs {
+		t, ok := config.ToolByID(id)
+		if !ok {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "unknown tool: " + id})
+			return
+		}
+		if _, ok := t.Install[platformName()]; !ok {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "unsupported on this platform: " + id})
+			return
+		}
 	}
 	runID := newRunID()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -229,4 +250,15 @@ func newRunID() string {
 	b := make([]byte, 4)
 	_, _ = rand.Read(b)
 	return hex.EncodeToString(b)
+}
+
+func (s *Server) handleNetworkStatus(w http.ResponseWriter, r *http.Request) {
+	settings, _ := s.store.Load()
+	var status network.Status
+	if s.net != nil {
+		status = s.net.Detect(r.Context(), settings.Region)
+	} else {
+		status = network.Status{Region: settings.Region, Reason: "manual"}
+	}
+	writeJSON(w, http.StatusOK, status)
 }

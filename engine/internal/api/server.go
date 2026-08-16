@@ -11,13 +11,17 @@ import (
 
 	"github.com/tanzhijir-04/Envly/engine/internal/events"
 	"github.com/tanzhijir-04/Envly/engine/internal/executor"
+	"github.com/tanzhijir-04/Envly/engine/internal/network"
 	"github.com/tanzhijir-04/Envly/engine/internal/state"
+	"github.com/tanzhijir-04/Envly/engine/internal/verify"
 )
 
 type Server struct {
 	store   *state.Store
 	hub     *events.Hub
 	exec    executor.Executor
+	ver     *verify.Verifier
+	net     *network.Detector
 	webDir  string
 	version string
 
@@ -26,8 +30,8 @@ type Server struct {
 	curCancel context.CancelFunc
 }
 
-func NewServer(store *state.Store, hub *events.Hub, exec executor.Executor, webDir, version string) *Server {
-	return &Server{store: store, hub: hub, exec: exec, webDir: webDir, version: version}
+func NewServer(store *state.Store, hub *events.Hub, exec executor.Executor, ver *verify.Verifier, net *network.Detector, webDir, version string) *Server {
+	return &Server{store: store, hub: hub, exec: exec, ver: ver, net: net, webDir: webDir, version: version}
 }
 
 func (s *Server) Handler() http.Handler {
@@ -41,6 +45,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/events", s.handleEvents)
 	mux.HandleFunc("GET /api/settings", s.handleGetSettings)
 	mux.HandleFunc("POST /api/settings", s.handlePostSettings)
+	mux.HandleFunc("GET /api/network/status", s.handleNetworkStatus)
 	mux.Handle("/", s.staticHandler())
 	return mux
 }
