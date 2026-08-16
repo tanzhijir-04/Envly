@@ -60,8 +60,22 @@ body {
 
 .page { max-width: 1080px; margin: 0 auto; padding: 28px 22px 60px; }
 
+.hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 8px; }
+.hero-left { min-width: 0; }
 .hero h1 { font-size: clamp(24px, 3.4vw, 30px); font-weight: 700; letter-spacing: -0.03em; }
 .subtitle { color: var(--meta); font-size: 15px; margin-top: 6px; }
+.steps { display: flex; gap: 8px; flex-wrap: wrap; }
+.step-pill {
+  font-size: 12px;
+  font-weight: 600;
+  color: #86868b;
+  background: #fff;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  padding: 6px 14px;
+  white-space: nowrap;
+}
+.step-pill.on { background: #1d1d1f; color: #fff; border-color: #1d1d1f; }
 
 .section-label { font-size: 12px; font-weight: 600; color: var(--meta); letter-spacing: 0.04em; margin: 26px 0 10px; }
 
@@ -73,8 +87,11 @@ body {
   padding: 16px;
   cursor: pointer;
   box-shadow: var(--shadow-card);
+  transition: transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1), box-shadow 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
+.template-card:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1); }
 .template-card.on { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.12); }
+.template-card.on:hover { transform: none; }
 .template-card b { font-size: 14px; }
 .template-card p { font-size: 12px; color: var(--meta); margin-top: 4px; line-height: 1.55; }
 .template-card .count { display: block; font-size: 12px; font-weight: 600; color: var(--accent); margin-top: 8px; }
@@ -99,6 +116,7 @@ body {
 }
 .row.on .box { background: var(--accent); border-color: var(--accent); color: #fff; }
 .row .name { font-size: 13.5px; font-weight: 500; }
+.row .ver { font-size: 11.5px; color: #86868b; font-variant-numeric: tabular-nums; }
 .row .method { margin-left: auto; font-size: 11px; color: var(--meta); background: var(--ground); border-radius: var(--radius-pill); padding: 3px 10px; }
 
 .footer { display: flex; align-items: center; gap: 12px; margin-top: 22px; padding-bottom: 24px; }

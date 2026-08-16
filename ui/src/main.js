@@ -12,6 +12,7 @@ const state = {
   selected: [],
   planItems: [],
   report: null,
+  activeTemplate: null,
 };
 
 function el(tag, className, text) {
@@ -37,9 +38,20 @@ function groupItems() {
 
 function render() {
   app.innerHTML = "";
+  app.append(renderHero(), renderTemplates(), renderRegion(), renderChecklist(), renderFooter(), renderLog(), renderSettings(), renderReport());
+}
+
+function renderHero() {
   const hero = el("div", "hero");
-  hero.append(el("h1", "", t(state.lang, "welcome.title")), el("p", "subtitle", t(state.lang, "welcome.subtitle")));
-  app.append(hero, renderTemplates(), renderRegion(), renderChecklist(), renderFooter(), renderLog(), renderSettings(), renderReport());
+  const left = el("div", "hero-left");
+  left.append(el("h1", "", t(state.lang, "welcome.title")), el("p", "subtitle", t(state.lang, "welcome.subtitle")));
+  const steps = el("div", "steps");
+  for (const key of ["step.template", "step.checklist", "step.run"]) {
+    const pill = el("span", "step-pill" + (key === "step.template" ? " on" : ""), t(state.lang, key));
+    steps.append(pill);
+  }
+  hero.append(left, steps);
+  return hero;
 }
 
 function renderTemplates() {
@@ -47,13 +59,14 @@ function renderTemplates() {
   wrap.append(el("div", "section-label", t(state.lang, "templates.title")));
   const grid = el("div", "templates");
   for (const tmpl of state.templates) {
-    const card = el("div", "template-card");
+    const card = el("div", "template-card" + (state.activeTemplate === tmpl.id ? " on" : ""));
     card.append(
       el("b", "", tmpl[`name_${state.lang}`]),
       el("p", "", tmpl[`desc_${state.lang}`]),
-      el("span", "count", `${t(state.lang, "summary.selected", { count: tmpl.count })}`)
+      el("span", "count", `${tmpl.count} ${t(state.lang, "template.unit")}`)
     );
     card.addEventListener("click", () => {
+      state.activeTemplate = tmpl.id;
       state.selected = applyTemplate(state.selected, tmpl.tool_ids);
       loadPlanStatus().then(render);
     });
@@ -94,10 +107,11 @@ function renderChecklist() {
     section.append(head);
     for (const item of group.items) {
       const row = el("div", item.checked ? "row on" : "row");
-      row.append(el("span", "box", "✓"), el("span", "name", item[`name_${state.lang}`]), el("span", "method", item.method));
+      row.append(el("span", "box", "✓"), el("span", "name", item[`name_${state.lang}`]), el("span", "ver", item.version || ""));
       if (item.status === "installed") {
         row.append(el("span", "badge", t(state.lang, "tool.installed", { version: item.version || "" })));
       }
+      row.append(el("span", "method", item.method));
       row.addEventListener("click", () => {
         state.selected = toggle(state.selected, item.id);
         loadPlanStatus().then(render);
@@ -112,7 +126,9 @@ function renderChecklist() {
 
 function renderFooter() {
   const footer = el("div", "footer");
-  footer.append(el("span", "summary", t(state.lang, "summary.selected", { count: state.selected.length })));
+  footer.append(
+    el("span", "summary", `${t(state.lang, "summary.selected", { count: state.selected.length })} · ${t(state.lang, "summary.auto.skip")}`)
+  );
   const cta = el("button", "cta", t(state.lang, "run.button"));
   cta.addEventListener("click", runFlow);
   footer.append(cta);
