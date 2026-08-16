@@ -1,0 +1,17 @@
+# Go
+engine/bin/
+engine/envly
+engine/envly.exe
+*.exe
+
+# Node / UI
+node_modules/
+ui/dist/
+
+# Envly runtime
+.envly/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
