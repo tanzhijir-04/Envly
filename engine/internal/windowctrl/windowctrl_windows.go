@@ -13,7 +13,7 @@ import (
 var (
 	user32   = syscall.NewLazyDLL("user32.dll")
 	kernel32 = syscall.NewLazyDLL("kernel32.dll")
-	gdi32    = syscall.NewLazyDLL("gdi32.dll")
+	dwmapi   = syscall.NewLazyDLL("dwmapi.dll")
 
 	procEnumWindows                = user32.NewProc("EnumWindows")
 	procGetWindowThreadProcessId   = user32.NewProc("GetWindowThreadProcessId")
@@ -26,9 +26,7 @@ var (
 	procOpenProcess                = kernel32.NewProc("OpenProcess")
 	procQueryFullProcessImageNameW = kernel32.NewProc("QueryFullProcessImageNameW")
 	procCloseHandle                = kernel32.NewProc("CloseHandle")
-	procGetWindowRect              = user32.NewProc("GetWindowRect")
-	procCreateRoundRectRgn         = gdi32.NewProc("CreateRoundRectRgn")
-	procSetWindowRgn               = user32.NewProc("SetWindowRgn")
+	procDwmSetWindowAttribute      = dwmapi.NewProc("DwmSetWindowAttribute")
 )
 
 const (
@@ -51,8 +49,9 @@ const (
 
 	processQueryLimitedInformation = 0x1000
 
-	// windowCornerRadius 按 liquid-glass 规范取 panel 档 22px
-	windowCornerRadius = 22
+	// DWMWA_WINDOW_CORNER_PREFERENCE = 33，DWMWCP_ROUND = 2（Windows 11 原生圆角）
+	dwmwaWindowCornerPreference = 33
+	dwmcpRound                  = 2
 )
 
 var gwlStyleValue = int(-16)
@@ -98,7 +97,7 @@ func ensureChrome(hwnd uintptr) error {
 	if err := stripNonClient(hwnd); err != nil {
 		return err
 	}
-	return applyRoundedCorners(hwnd)
+	return applyDwmRoundedCorners(hwnd)
 }
 
 // findWindow 枚举顶层窗口，返回标题为 Envly 且属于 Envly/pake-envly 进程的窗口。
@@ -156,21 +155,12 @@ func stripNonClient(hwnd uintptr) error {
 	return nil
 }
 
-// applyRoundedCorners 用 22px 圆角区域裁剪窗口（SetWindowRgn 后区域归系统所有，不 DeleteObject）。
-func applyRoundedCorners(hwnd uintptr) error {
-	var rect struct {
-		Left, Top, Right, Bottom int32
+// applyDwmRoundedCorners 开启 Windows 11 原生圆角（保留阴影与抗锯齿）。
+func applyDwmRoundedCorners(hwnd uintptr) error {
+	pref := uintptr(dwmcpRound)
+	ret, _, _ := procDwmSetWindowAttribute.Call(hwnd, dwmwaWindowCornerPreference, uintptr(unsafe.Pointer(&pref)), 4)
+	if ret != 0 {
+		return fmt.Errorf("DwmSetWindowAttribute failed")
 	}
-	if ret, _, _ := procGetWindowRect.Call(hwnd, uintptr(unsafe.Pointer(&rect))); ret == 0 {
-		return fmt.Errorf("failed to get window rect")
-	}
-	w := rect.Right - rect.Left
-	h := rect.Bottom - rect.Top
-	d := int32(windowCornerRadius * 2)
-	hrgn, _, _ := procCreateRoundRectRgn.Call(0, 0, uintptr(w+1), uintptr(h+1), uintptr(d), uintptr(d))
-	if hrgn == 0 {
-		return fmt.Errorf("failed to create rounded region")
-	}
-	procSetWindowRgn.Call(hwnd, hrgn, 1)
 	return nil
 }

@@ -21,7 +21,7 @@ body {
   background: var(--ground);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
-  border-radius: 22px;
+  border-radius: 8px;
 }
 
 .topbar {
@@ -34,7 +34,7 @@ body {
   backdrop-filter: saturate(180%) blur(20px);
   border-bottom: 1px solid var(--hairline);
   -webkit-app-region: drag;
-  border-radius: 22px 22px 0 0;
+  border-radius: 8px 8px 0 0;
 }
 
 .brand { font-weight: 700; font-size: 15px; letter-spacing: -0.01em; }
