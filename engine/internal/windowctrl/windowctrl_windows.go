@@ -1,6 +1,6 @@
 //go:build windows
 
-// Package windowctrl 通过 Win32 消息控制 Envly 应用窗口（最小化/最大化/关闭/无边框）。
+// Package windowctrl 通过 Win32 消息控制 Envly 应用窗口（最小化/最大化/关闭/无边框/圆角）。
 package windowctrl
 
 import (
@@ -13,6 +13,7 @@ import (
 var (
 	user32   = syscall.NewLazyDLL("user32.dll")
 	kernel32 = syscall.NewLazyDLL("kernel32.dll")
+	gdi32    = syscall.NewLazyDLL("gdi32.dll")
 
 	procEnumWindows                = user32.NewProc("EnumWindows")
 	procGetWindowThreadProcessId   = user32.NewProc("GetWindowThreadProcessId")
@@ -25,6 +26,9 @@ var (
 	procOpenProcess                = kernel32.NewProc("OpenProcess")
 	procQueryFullProcessImageNameW = kernel32.NewProc("QueryFullProcessImageNameW")
 	procCloseHandle                = kernel32.NewProc("CloseHandle")
+	procGetWindowRect              = user32.NewProc("GetWindowRect")
+	procCreateRoundRectRgn         = gdi32.NewProc("CreateRoundRectRgn")
+	procSetWindowRgn               = user32.NewProc("SetWindowRgn")
 )
 
 const (
@@ -46,6 +50,9 @@ const (
 	swpNoZOrder     = 0x0004
 
 	processQueryLimitedInformation = 0x1000
+
+	// windowCornerRadius 按 liquid-glass 规范取 panel 档 22px
+	windowCornerRadius = 22
 )
 
 var gwlStyleValue = int(-16)
@@ -60,7 +67,7 @@ func (Controller) Action(action string) error {
 	}
 	switch action {
 	case "frameless":
-		return stripNonClient(hwnd)
+		return ensureChrome(hwnd)
 	case "minimize":
 		procPostMessageW.Call(hwnd, wmSysCommand, scMinimize, 0)
 	case "maximize":
@@ -78,13 +85,20 @@ func (Controller) Action(action string) error {
 	return nil
 }
 
-// EnsureFrameless 移除窗口标题栏等非客户区样式。
+// EnsureFrameless 移除窗口标题栏并应用 22px 圆角。
 func EnsureFrameless() error {
 	hwnd, err := findWindow()
 	if err != nil {
 		return err
 	}
-	return stripNonClient(hwnd)
+	return ensureChrome(hwnd)
+}
+
+func ensureChrome(hwnd uintptr) error {
+	if err := stripNonClient(hwnd); err != nil {
+		return err
+	}
+	return applyRoundedCorners(hwnd)
 }
 
 // findWindow 枚举顶层窗口，返回标题为 Envly 且属于 Envly/pake-envly 进程的窗口。
@@ -135,10 +149,28 @@ func stripNonClient(hwnd uintptr) error {
 	}
 	nonClient := uintptr(wsCaption | wsThickFrame | wsSysMenu | wsMinimizeBox | wsMaximizeBox)
 	newStyle := style &^ nonClient
-	if newStyle == style {
-		return nil // 已经是无边框
+	if newStyle != style {
+		procSetWindowLong.Call(hwnd, uintptr(gwlStyleValue), newStyle)
+		procSetWindowPos.Call(hwnd, 0, 0, 0, 0, 0, uintptr(swpFramechanged|swpNoMove|swpNoSize|swpNoZOrder))
 	}
-	procSetWindowLong.Call(hwnd, uintptr(gwlStyleValue), newStyle)
-	procSetWindowPos.Call(hwnd, 0, 0, 0, 0, 0, uintptr(swpFramechanged|swpNoMove|swpNoSize|swpNoZOrder))
+	return nil
+}
+
+// applyRoundedCorners 用 22px 圆角区域裁剪窗口（SetWindowRgn 后区域归系统所有，不 DeleteObject）。
+func applyRoundedCorners(hwnd uintptr) error {
+	var rect struct {
+		Left, Top, Right, Bottom int32
+	}
+	if ret, _, _ := procGetWindowRect.Call(hwnd, uintptr(unsafe.Pointer(&rect))); ret == 0 {
+		return fmt.Errorf("failed to get window rect")
+	}
+	w := rect.Right - rect.Left
+	h := rect.Bottom - rect.Top
+	d := int32(windowCornerRadius * 2)
+	hrgn, _, _ := procCreateRoundRectRgn.Call(0, 0, uintptr(w+1), uintptr(h+1), uintptr(d), uintptr(d))
+	if hrgn == 0 {
+		return fmt.Errorf("failed to create rounded region")
+	}
+	procSetWindowRgn.Call(hwnd, hrgn, 1)
 	return nil
 }
