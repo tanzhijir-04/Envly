@@ -106,3 +106,46 @@ func (a *Applier) gitProxy(ctx context.Context) string {
 	out, _ := a.run.Run(ctx, cmd[0], cmd[1:]...)
 	return strings.TrimSpace(out)
 }
+
+// Restore 把已记录的 npm/pip/代理变更还原为 Before 值，并标记为已还原。
+func (a *Applier) Restore(ctx context.Context) error {
+	ops, err := a.store.EnvOps()
+	if err != nil {
+		return err
+	}
+	for _, op := range ops {
+		if op.Restored {
+			continue
+		}
+		switch op.Key {
+		case "npm_registry":
+			if op.Before != "" {
+				if _, err := a.run.Run(ctx, NpmSetRegistryCmd(op.Before)[0], NpmSetRegistryCmd(op.Before)[1:]...); err != nil {
+					return err
+				}
+			}
+		case "pip_index":
+			if op.Before != "" {
+				if _, err := a.run.Run(ctx, PipSetIndexCmd(op.Before)[0], PipSetIndexCmd(op.Before)[1:]...); err != nil {
+					return err
+				}
+			}
+		case "git_http_proxy":
+			if op.Before != "" {
+				if _, err := a.run.Run(ctx, GitProxySetCmd(op.Before)[0], GitProxySetCmd(op.Before)[1:]...); err != nil {
+					return err
+				}
+			} else {
+				if _, err := a.run.Run(ctx, GitProxyUnsetCmd()[0], GitProxyUnsetCmd()[1:]...); err != nil {
+					return err
+				}
+			}
+		default:
+			continue
+		}
+		if err := a.store.MarkEnvOpRestored(op.Key); err != nil {
+			return err
+		}
+	}
+	return nil
+}

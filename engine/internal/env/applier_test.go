@@ -59,3 +59,30 @@ func TestApplyProfileWritesOnce(t *testing.T) {
 		t.Fatalf("expected marker once, got:\n%s", string(b))
 	}
 }
+
+func TestRestoreReversesMirrorAndMarksRestored(t *testing.T) {
+	run := &stubRunner{results: map[string]string{
+		"npm config get registry": "https://registry.npmjs.org",
+	}}
+	db := store.New(t.TempDir())
+	a := NewApplier(run, db)
+	if err := a.ApplyMirrors(context.Background(), "cn"); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.Restore(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	foundSet := false
+	for _, call := range run.calls {
+		if call == "npm config set registry https://registry.npmjs.org" {
+			foundSet = true
+		}
+	}
+	if !foundSet {
+		t.Fatalf("expected npm registry restore call, got %v", run.calls)
+	}
+	ops, _ := db.EnvOps()
+	if len(ops) != 1 || !ops[0].Restored {
+		t.Fatalf("expected restored env op, got %+v", ops)
+	}
+}

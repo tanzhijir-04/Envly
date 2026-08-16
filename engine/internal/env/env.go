@@ -55,6 +55,10 @@ func GitProxyGetCmd() []string {
 	return []string{"git", "config", "--get", "http.proxy"}
 }
 
+func GitProxyUnsetCmd() []string {
+	return []string{"git", "config", "--global", "--unset", "http.proxy"}
+}
+
 func UserPathScript(add string) string {
 	return "$p=[Environment]::GetEnvironmentVariable('Path','User'); if($p -notlike '*" + add + "*'){[Environment]::SetEnvironmentVariable('Path',($p.TrimEnd(';')+';" + add + "'),'User')}"
 }
