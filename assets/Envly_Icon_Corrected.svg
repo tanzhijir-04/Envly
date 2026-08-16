@@ -1,0 +1,219 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <!-- Background -->
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#07152F"/>
+      <stop offset=".52" stop-color="#075FE8"/>
+      <stop offset="1" stop-color="#24116D"/>
+    </linearGradient>
+
+    <!-- Main cyan ribbon -->
+    <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#75FFFF"/>
+      <stop offset=".48" stop-color="#00D8FF"/>
+      <stop offset="1" stop-color="#1470FF"/>
+    </linearGradient>
+
+    <!-- Rear purple ribbon -->
+    <linearGradient id="purple" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6048FF"/>
+      <stop offset="1" stop-color="#D52CFF"/>
+    </linearGradient>
+
+    <linearGradient id="terminalGlass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity=".27"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity=".08"/>
+    </linearGradient>
+
+    <filter id="shadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="22" stdDeviation="25" flood-color="#00143D" flood-opacity=".48"/>
+    </filter>
+
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="28"/>
+    </filter>
+
+    <clipPath id="iconClip">
+      <rect x="42" y="42" width="940" height="940" rx="205"/>
+    </clipPath>
+  </defs>
+
+  <!-- =========================================================
+       Z0 — ICON BACKGROUND
+       ========================================================= -->
+  <rect x="42" y="42" width="940" height="940" rx="205"
+        fill="url(#bg)" filter="url(#shadow)"/>
+
+  <g clip-path="url(#iconClip)">
+    <!-- ambient light -->
+    <ellipse cx="215" cy="95" rx="460" ry="300"
+             fill="#65EFFF" opacity=".18" filter="url(#softGlow)"/>
+    <ellipse cx="860" cy="850" rx="390" ry="280"
+             fill="#6C35FF" opacity=".20" filter="url(#softGlow)"/>
+
+    <!-- =======================================================
+         Z1 — REAR PURPLE RIBBON
+         Must stay BEHIND the cyan ribbon and terminal.
+         ======================================================= -->
+    <path d="M205 645 C300 825 590 865 760 714"
+          fill="none"
+          stroke="url(#purple)"
+          stroke-width="52"
+          stroke-linecap="round"
+          opacity=".78"/>
+
+    <!-- =======================================================
+         Z2 — MAIN CYAN ENVIRONMENT ORBIT
+         Entire orbit is BEHIND the terminal.
+         ======================================================= -->
+    <path d="M120 555
+             C145 760 385 845 620 760
+             C795 697 867 555 785 432
+             C710 319 535 306 390 365
+             C265 416 205 535 255 640"
+          fill="none"
+          stroke="url(#cyan)"
+          stroke-width="76"
+          stroke-linecap="round"/>
+
+    <!-- subtle highlight on rear ribbon -->
+    <path d="M120 555
+             C145 760 385 845 620 760
+             C795 697 867 555 785 432"
+          fill="none"
+          stroke="#B9FFFF"
+          stroke-opacity=".30"
+          stroke-width="9"
+          stroke-linecap="round"/>
+
+    <!-- =======================================================
+         Z3 — TERMINAL WINDOW
+         Terminal is ABOVE both ribbons.
+         ======================================================= -->
+    <g transform="rotate(-9 500 430)" filter="url(#shadow)">
+      <rect x="205" y="215" width="565" height="430" rx="58"
+            fill="url(#terminalGlass)"
+            stroke="#D7FAFF"
+            stroke-opacity=".55"
+            stroke-width="5"/>
+
+      <!-- terminal title bar -->
+      <path d="M263 215 H712
+               Q770 215 770 273
+               V291 H205 V273
+               Q205 215 263 215Z"
+            fill="#06142E" fill-opacity=".88"/>
+
+      <!-- traffic lights -->
+      <circle cx="250" cy="253" r="13" fill="#FF5F57"/>
+      <circle cx="291" cy="253" r="13" fill="#FFBD2E"/>
+      <circle cx="332" cy="253" r="13" fill="#28C840"/>
+
+      <!-- terminal prompt -->
+      <path d="M305 390 L360 435 L305 480"
+            fill="none"
+            stroke="#F7FFFF"
+            stroke-width="24"
+            stroke-linecap="round"
+            stroke-linejoin="round"/>
+      <path d="M385 482 H455"
+            stroke="#F7FFFF"
+            stroke-width="24"
+            stroke-linecap="round"/>
+    </g>
+
+    <!-- =======================================================
+         Z4 — OS BADGES
+         They sit beside the terminal and do NOT cover it.
+         ======================================================= -->
+    <g filter="url(#shadow)">
+      <!-- Windows -->
+      <g transform="translate(735 175)">
+        <rect width="126" height="126" rx="34"
+              fill="#FFFFFF" fill-opacity=".18"
+              stroke="#FFFFFF" stroke-opacity=".38" stroke-width="3"/>
+        <rect x="31" y="31" width="64" height="64" rx="10" fill="#FFF"/>
+        <path d="M36 36h25v25H36zm31 0h25v25H67z
+                 M36 67h25v25H36zm31 0h25v25H67z"
+              fill="#1677FF"/>
+      </g>
+
+      <!-- macOS -->
+      <g transform="translate(770 325)">
+        <rect width="112" height="112" rx="32"
+              fill="#FFFFFF" fill-opacity=".16"
+              stroke="#FFFFFF" stroke-opacity=".34" stroke-width="3"/>
+        <circle cx="56" cy="56" r="31" fill="#FFF"/>
+        <path d="M56 29c-13 0-23 12-23 27
+                 0 13 7 20 10 27 4 8 7 11 13 11
+                 5 0 9-7 14-7s8 7 14 7 9-4 13-13
+                 c2-4 5-11 6-15-17-7-20-37-47-37z"
+              fill="#111C39"/>
+        <path d="M59 27c3-10 10-15 19-17
+                 1 9-2 17-11 21"
+              fill="#111C39"/>
+      </g>
+
+      <!-- Linux -->
+      <g transform="translate(690 455)">
+        <rect width="110" height="110" rx="32"
+              fill="#FFFFFF" fill-opacity=".15"
+              stroke="#FFFFFF" stroke-opacity=".30" stroke-width="3"/>
+        <circle cx="55" cy="55" r="34" fill="#FFF"/>
+        <circle cx="55" cy="49" r="23" fill="#8A72FF"/>
+        <path d="M34 68 Q55 86 76 68 L68 84 H42Z" fill="#8A72FF"/>
+        <path d="M39 61 Q55 75 71 61"
+              fill="none" stroke="#FFF" stroke-width="6"
+              stroke-linecap="round"/>
+      </g>
+    </g>
+
+    <!-- =======================================================
+         Z5 — FRONT ARROW HEAD
+         Only the arrow head crosses the terminal, making the
+         "one-click / execute" action visually unambiguous.
+         ======================================================= -->
+    <path d="M740 355 L875 392 L782 488 Z"
+          fill="url(#cyan)"
+          stroke="#D8FFFF"
+          stroke-opacity=".28"
+          stroke-width="3"
+          filter="url(#shadow)"/>
+
+    <!-- =======================================================
+         Z6 — BRAND LOCKUP
+         Always above all decorative layers.
+         ======================================================= -->
+    <text x="512" y="875"
+          text-anchor="middle"
+          font-family="Inter, Segoe UI, Arial, sans-serif"
+          font-size="116"
+          font-weight="800"
+          letter-spacing="-5"
+          fill="#FFFFFF">Envly</text>
+
+    <text x="512" y="925"
+          text-anchor="middle"
+          font-family="Inter, Segoe UI, Arial, sans-serif"
+          font-size="27"
+          font-weight="600"
+          letter-spacing="6"
+          fill="#DDFBFF"
+          opacity=".90">ONE CLICK · ALL SET</text>
+  </g>
+
+  <!-- =========================================================
+       Z7 — GLASS BORDER / FINAL TOPMOST FRAME
+       ========================================================= -->
+  <rect x="42" y="42" width="940" height="940" rx="205"
+        fill="none"
+        stroke="#FFFFFF"
+        stroke-opacity=".38"
+        stroke-width="5"/>
+
+  <rect x="57" y="57" width="910" height="910" rx="190"
+        fill="none"
+        stroke="#7FEFFF"
+        stroke-opacity=".14"
+        stroke-width="2"/>
+</svg>
