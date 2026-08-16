@@ -30,3 +30,30 @@ func TestTemplateToolIDsDropsUnknown(t *testing.T) {
 		t.Fatalf("expected only nodejs, got %v", ids)
 	}
 }
+
+func TestCatalogHasFullWindowsSet(t *testing.T) {
+	required := []string{
+		"nodejs", "git", "python", "typescript", "mingw", "msvc", "php", "uv",
+		"jupyter", "go", "rust", "java", "claude-code", "codex-cli", "gemini-cli",
+		"pake", "vscode", "cursor", "sublime", "drawio", "jetbrains",
+		"windows-terminal", "powershell7", "oh-my-posh", "cascadia-font",
+		"env-mirrors", "env-pip", "env-proxy", "env-shell", "env-path",
+	}
+	for _, id := range required {
+		tool, ok := ToolByID(id)
+		if !ok {
+			t.Fatalf("missing tool %s", id)
+		}
+		if _, ok := tool.Install["win"]; !ok {
+			t.Fatalf("tool %s missing win install spec", id)
+		}
+	}
+}
+
+func TestTemplatesAllReferenceExistingTools(t *testing.T) {
+	for _, tmpl := range Templates {
+		if len(TemplateToolIDs(tmpl)) != len(tmpl.ToolIDs) {
+			t.Fatalf("template %s references unknown tool", tmpl.ID)
+		}
+	}
+}
