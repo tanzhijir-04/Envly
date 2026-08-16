@@ -37,8 +37,10 @@ function groupItems() {
 }
 
 function render() {
+  const scrollY = window.scrollY;
   app.innerHTML = "";
   app.append(renderHero(), renderTemplates(), renderRegion(), renderChecklist(), renderFooter(), renderLog(), renderSettings(), renderReport());
+  window.scrollTo(0, scrollY);
 }
 
 function renderHero() {
