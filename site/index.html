@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Envly — 一键开发环境配置</title>
+  <meta name="description" content="One-click developer environment setup for Windows, macOS and Linux — templates, real installs, mirrors, and live reports in a Liquid Glass UI.">
+  <link rel="icon" href="assets/Envly_Icon_Corrected.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="glass-nav" id="nav">
+  <div class="nav-inner">
+    <a class="brand" href="./">
+      <img src="assets/Envly_Icon_Corrected.svg" width="24" height="24" alt="Envly">
+      <span>Envly</span>
+    </a>
+    <div class="nav-right">
+      <div class="seg" id="lang-seg" role="group" aria-label="Language">
+        <button data-lang="zh" class="active">中</button>
+        <button data-lang="en">EN</button>
+      </div>
+      <a class="btn btn-secondary" href="https://github.com/tanzhijir-04/Envly" target="_blank" rel="noopener" data-i18n="nav.github">GitHub</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="hero-art" aria-hidden="true">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <img class="hero-icon" src="assets/Envly_Icon_Corrected.svg" alt="">
+    </div>
+    <div class="eyebrow">
+      <span class="live-dot"></span>
+      <span data-i18n="hero.eyebrow">v1.0.0 · Windows · macOS · Linux</span>
+    </div>
+    <h1 data-i18n="hero.title">一键配置开发环境</h1>
+    <p class="lede" data-i18n="hero.lede">选模板、勾清单、一键执行——实时日志与执行报告都在一个 Liquid Glass 单页向导里完成，海外网络自动跳过镜像源。</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="https://github.com/tanzhijir-04/Envly/releases" target="_blank" rel="noopener" data-i18n="hero.download">下载 Envly</a>
+      <a class="btn btn-secondary" href="https://github.com/tanzhijir-04/Envly" target="_blank" rel="noopener" data-i18n="hero.quickstart">快速开始</a>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title" data-i18n="features.title">功能特性</h2>
+    <div class="card-grid">
+      <div class="card">
+        <h3 data-i18n="features.wizard.title">单页向导</h3>
+        <p data-i18n="features.wizard.desc">模板 → 勾选 → 一键配置 → 实时日志，全流程一个页面。</p>
+      </div>
+      <div class="card">
+        <h3 data-i18n="features.install.title">真实安装</h3>
+        <p data-i18n="features.install.desc">winget / npm / pip / rustup / download，已安装自动跳过。</p>
+      </div>
+      <div class="card">
+        <h3 data-i18n="features.env.title">环境配置</h3>
+        <p data-i18n="features.env.desc">npm/pip 镜像、代理、PowerShell Profile、PATH，可审计、可一键还原。</p>
+      </div>
+      <div class="card">
+        <h3 data-i18n="features.region.title">区域自适应</h3>
+        <p data-i18n="features.region.desc">自动检测网络区域，海外不强制切换镜像源。</p>
+      </div>
+      <div class="card">
+        <h3 data-i18n="features.report.title">执行报告</h3>
+        <p data-i18n="features.report.desc">安装记录与环境变更一目了然。</p>
+      </div>
+      <div class="card">
+        <h3 data-i18n="features.desktop.title">桌面体验</h3>
+        <p data-i18n="features.desktop.desc">无边框窗口、自绘控件、圆角与 Liquid Glass 动效。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title" data-i18n="download.title">下载</h2>
+    <div class="panel">
+      <a class="row" href="https://github.com/tanzhijir-04/Envly/releases/tag/v1.0.0" target="_blank" rel="noopener">
+        <div class="row-main">
+          <h3>Windows</h3>
+          <p data-i18n="download.win.desc">MSI 安装包 · 免安装 exe · 引擎二进制</p>
+        </div>
+        <span class="row-arrow">→</span>
+      </a>
+      <a class="row" href="https://github.com/tanzhijir-04/Envly/releases/tag/v1.0.0" target="_blank" rel="noopener">
+        <div class="row-main">
+          <h3>macOS</h3>
+          <p data-i18n="download.mac.desc">Envly.dmg + envly-engine-darwin</p>
+        </div>
+        <span class="row-arrow">→</span>
+      </a>
+      <a class="row" href="https://github.com/tanzhijir-04/Envly/releases/tag/v1.0.0" target="_blank" rel="noopener">
+        <div class="row-main">
+          <h3>Linux</h3>
+          <p data-i18n="download.linux.desc">envly.deb · envly.AppImage + envly-engine-linux</p>
+        </div>
+        <span class="row-arrow">→</span>
+      </a>
+    </div>
+    <p class="note" data-i18n="download.note">macOS / Linux 为「Pake 壳 + 独立引擎」双进程结构，先运行引擎再启动应用。</p>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title" data-i18n="stack.title">技术栈</h2>
+    <div class="tags">
+      <span class="tag">Go 1.23</span>
+      <span class="tag">Apple Liquid Glass</span>
+      <span class="tag">GSAP</span>
+      <span class="tag">Pake · Tauri</span>
+      <span class="tag">GitHub Actions</span>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="cta">
+      <div class="orb orb-cta-1"></div>
+      <div class="orb orb-cta-2"></div>
+      <div class="cta-inner">
+        <h2 data-i18n="cta.title">开始使用 Envly</h2>
+        <p data-i18n="cta.desc">下载对应平台的安装包，或从源码跑起来。</p>
+        <a class="glass-chip" href="https://github.com/tanzhijir-04/Envly/releases" target="_blank" rel="noopener" data-i18n="cta.button">前往 Releases</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <span>Envly · MIT License</span>
+    <div class="footer-links">
+      <a href="https://github.com/tanzhijir-04/Envly" target="_blank" rel="noopener" data-i18n="footer.github">GitHub</a>
+      <a href="https://github.com/tanzhijir-04/Envly/blob/main/README.md" target="_blank" rel="noopener" data-i18n="footer.readme">README</a>
+      <a href="https://github.com/tanzhijir-04/Envly/releases" target="_blank" rel="noopener" data-i18n="footer.releases">Releases</a>
+    </div>
+  </div>
+</footer>
+
+<script src="main.js"></script>
+</body>
+</html>
